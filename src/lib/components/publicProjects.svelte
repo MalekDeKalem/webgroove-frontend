@@ -48,7 +48,7 @@
     });
 
     async function getPublicProjects() {
-        const url = `http://localhost:3999/api/projects/public`;
+        const url = `https://webgroove-82906d5c43b2.herokuapp.com/api/projects/public`;
 
         try {
             const response = await fetch(url, { method: "GET" });
@@ -78,7 +78,7 @@
     }
 
     async function loadPatterns(projectId) {
-        const url = `http://localhost:3999/api/projects/${projectId}/patterns`;
+        const url = `https://webgroove-82906d5c43b2.herokuapp.com/api/projects/${projectId}/patterns`;
 
         try {
             errorMessage = "";
@@ -180,7 +180,7 @@
     async function loadProfilePicture(project) {
         try {
             const response = await fetch(
-                `http://localhost:3999/api/user/${project.User.id}/profile-picture`,
+                `https://webgroove-82906d5c43b2.herokuapp.com/api/user/${project.User.id}/profile-picture`,
                 { method: "GET" },
             );
 
