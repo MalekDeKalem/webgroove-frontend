@@ -24,7 +24,7 @@
 <div class="container">
     <div class="introduction">
         <div class="introduction-text">
-            <h1>WEBGROOVE<br></h1>
+            <h1>WEBGROOVE"""<br></h1>
             <h2>Melodien und Beats erstellen</h2>
             <ul>
                 <li>Coole vielfältige Synthesizer</li>
