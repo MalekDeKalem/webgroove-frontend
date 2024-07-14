@@ -29,11 +29,12 @@ export const synthRelease = writable<number>(0.5);
 export const projectId = writable<number>(-1);
 export const projectNameStore = writable<string>('')
 export const projectIsPublic = writable<boolean>(false);
+export const projectIsImportable = writable<boolean>(false);
 export const description = writable<string>('');
 export const projectLikes = writable<number>(-1);
 export const projectOwner = writable<string>('');
 export const projectOwnerId = writable<string>(-1);
-
+export const readOnlyMode = writable<boolean>(false);
 
 export const seqPatternIdStore = writable<number>(-1)
 export const seqPatternNameStore = writable<string>('')
@@ -45,6 +46,7 @@ export const drumPatternNameStore = writable<string>('')
 export const wavetableIndexStore = writable<number>(0);
 export const samplekitIndexStore = writable<number>(0);
 
+export const isPreviewing = writable<boolean>(false);
 //Navbar
 
 // export const showSaveProjectDialog = writable<boolean>(false);;

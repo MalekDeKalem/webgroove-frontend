@@ -1,7 +1,7 @@
 <script>
     // @ts-nocheck
     import LoadingIndicator from "$lib/components/UiComponentes/loadingIndicator.svelte";
-import {bpmStore,projectNameStore,projectIsPublic,activeDrumStore,rows, projectId, drumPatternIdStore, seqPatternIdStore, description, projectOwner, projectOwnerId} from "$lib/stores";
+import {bpmStore,projectNameStore,projectIsPublic,activeDrumStore,rows, projectId, drumPatternIdStore, seqPatternIdStore, description, projectOwner, projectOwnerId, projectIsImportable} from "$lib/stores";
     export let projectName;
     export let isPublic = false;
     export let cancelSave;
@@ -30,6 +30,7 @@ import {bpmStore,projectNameStore,projectIsPublic,activeDrumStore,rows, projectI
             userId: userId,
             projectName: $projectNameStore,
             isPublic: $projectIsPublic,
+            isImportable: $projectIsImportable,
             bpm: $bpmStore,
             description: $description,
             stepSequencePattern: $rows,
@@ -71,8 +72,13 @@ import {bpmStore,projectNameStore,projectIsPublic,activeDrumStore,rows, projectI
         }
     }
 
-    function handleCheckboxChange(event) {
+    function handleCheckboxIsPublicChange(event) {
         isPublic = event.target.checked;
+    }
+
+    
+    function handleCheckboxIsImportableChange(event) {
+        $projectIsImportable = event.target.checked;
     }
 </script>
 
@@ -114,7 +120,7 @@ import {bpmStore,projectNameStore,projectIsPublic,activeDrumStore,rows, projectI
                     id="public"
                     type="checkbox"
                     bind:value={isPublic}
-                    on:change={handleCheckboxChange}
+                    on:change={handleCheckboxIsPublicChange}
                 />
                 <label for="public">öffentlich</label>
                 <span class="tooltip-container">
@@ -129,14 +135,36 @@ import {bpmStore,projectNameStore,projectIsPublic,activeDrumStore,rows, projectI
                     >
                 </span>
             </div>
+            <div class="checkbox">
+                <input
+                    id="isImportable"
+                    type="checkbox"
+                    bind:value={$projectIsImportable}
+                    on:change={handleCheckboxIsImportableChange}
+                />
+                <label for="isImportable">importierbar</label>
+                <span class="tooltip-container">
+                    <span class="tooltip-icon"
+                        ><img
+                            src="/Icons/Questionmark.svg"
+                            alt="questionmark"
+                        /></span
+                    >
+                    <span class="tooltip-text"
+                        >Dein Projekt kann von anderen User in ihr eigenes Projekt importiert werden</span
+                    >
+                </span>
+            </div>
             <div class="dialog-buttons">
-                <button type="submit">Erstellen</button>
-                <button type="button" on:click={cancelSave}>Cancel</button>
+                <button class="formbutton" type="submit">Erstellen</button>
+                <button class="formbutton" type="button" on:click={cancelSave}>Cancel</button>
             </div>
         </form>
         <div class="message">
             {#if isLoading} 
+                <span class="loading-indicator">
                 <LoadingIndicator/>
+                </span>
             {/if}
             <p class={saveSuccess ? "visible" : "hidden"}>
                 Das Projekt wurde erfolgreich erstellt!
@@ -146,6 +174,21 @@ import {bpmStore,projectNameStore,projectIsPublic,activeDrumStore,rows, projectI
 </div>
 
 <style>
+    .message {
+        max-height: 1em;
+    }
+    .loading-indicator {
+        position: relative;
+        bottom: 10px;
+        display: flex;
+        justify-content: center;
+        margin: 0;
+        padding: 0;
+    }
+    .formbutton {
+        width: 40%;
+    }
+
     h3 {
         margin: 0;
         margin-bottom: 0.5em;
@@ -186,6 +229,7 @@ import {bpmStore,projectNameStore,projectIsPublic,activeDrumStore,rows, projectI
     .dialog div {
         margin: 0.8rem;
     }
+
 
     .message p {
         display: inline;

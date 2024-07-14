@@ -1,4 +1,5 @@
 <script lang="ts">
+    // @ts-nocheck
     import { onMount } from 'svelte';
     import { goto } from '$app/navigation';
     import Bottomtext from "$lib/components/Footer/Bottomtext.svelte";
@@ -60,7 +61,14 @@
         isEditing = true;
     }
 
+    export function stripBase64Image(dataUrl: string): string {
+        const base64Index = dataUrl.indexOf('base64,') + 7; // Die Länge von 'base64,' ist 7
+        return dataUrl.substring(base64Index);
+    }
+
     async function saveProfileChanges(): Promise<void> {
+        user.profilePicture = stripBase64Image(user.profilePicture);
+
         try {
             const response = await fetch(`http://localhost:3999/api/manageUser/${userId}`, {
                 method: "PUT", // Use PUT or POST depending on your API design
@@ -79,6 +87,7 @@
         } catch (error) {
             console.error('Fehler beim Speichern des Profils:', error);
         }
+        location.reload();
     }
 
     function cancelEdit(): void {
@@ -276,7 +285,7 @@
             <button class="delete-button" on:click={confirmDelete}>Profil löschen</button>
         </div>
     {:else}
-        <img src={user.profilePicture} alt="Profilbild" class="profile-picture">
+        <img src={user.profilePicture} alt="Profilbild" class="profile-picture"width="300" height="200">
         <p><strong>Username:</strong> <span>{user.username}</span></p>
         <p><strong>Email:</strong> <span>{user.email}</span></p>
         <p><strong>Country:</strong> <span>{user.country ? user.country : 'kein Land angegeben'}</span></p>

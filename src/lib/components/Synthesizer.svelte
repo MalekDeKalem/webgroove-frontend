@@ -3,7 +3,7 @@
   import BpmAnzeiger from "./BpmAnzeiger.svelte";
   import AdsrControl from "./AdsrControl.svelte";
   import Knob from "./UiComponentes/Knob.svelte";
-  import { playStore, bpmStore, projectNameStore, projectIsPublic, projectId, drumPatternNameStore, synthVolumeStore, updateSynthVolumeStore, synthPanStore, updateSynthPanStore, synthPitchStore, updateSynthPitchStore, seqPatternIdStore, drumPatternIdStore, showNewProjectDialog, effectSynthStore, addSynthEffect, removeSynthEffect, moveSynthEffectUp, moveSynthEffectDown, wavetableIndexStore, loggedIn } from "$lib/stores";
+  import { playStore, bpmStore, projectNameStore, projectIsPublic, projectId, drumPatternNameStore, synthVolumeStore, updateSynthVolumeStore, synthPanStore, updateSynthPanStore, synthPitchStore, updateSynthPitchStore, seqPatternIdStore, drumPatternIdStore, showNewProjectDialog, effectSynthStore, addSynthEffect, removeSynthEffect, moveSynthEffectUp, moveSynthEffectDown, wavetableIndexStore, loggedIn, projectIsImportable, readOnlyMode } from "$lib/stores";
   import { wavetables } from "$lib/wavetables.ts";
   import * as Tone from "tone";
   import { beatStore, rows } from "$lib/stores";
@@ -15,15 +15,25 @@
   import { get } from 'svelte/store';
     import ProjectInfo from "./ProjectInfo.svelte";
     import ScaleComponent from "./ScaleComponent.svelte";
+    import { read } from "$app/server";
   
     onMount(() => {
         checkForLoginContext();
-        if($loggedIn) {
-        if(!$projectNameStore) {
-          // console.log("neu")
-          showNewProjectDialog.set(true)
+        if ($loggedIn) {
+        switch (true) {
+            case $projectNameStore == '': 
+                showNewProjectDialog.set(true)
+            case $projectNameStore == '' && !$readOnlyMode:
+                showNewProjectDialog.set(true);
+                break;
+            case $readOnlyMode:
+                showNewProjectDialog.set(false);
+                break;
+            case !$readOnlyMode:
+                showNewProjectDialog.set(false);
+                break;
         }
-      }
+    }
     });
 
   let beatcount = 0;
@@ -280,6 +290,9 @@ function printInfo(){
 
   </div>
   <div id="Synth">
+    <!-- <p>is importable: {$projectIsImportable}</p>
+    <p>is public: {$projectIsPublic}</p> -->
+
     <div id="Komponente">
       <!-- <div class="timesignature">
       <div><label for="time">Steps: 4n/8n/16n/32n/64n...</label></div>
