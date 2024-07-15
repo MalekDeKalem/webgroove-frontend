@@ -35,6 +35,7 @@ export const projectLikes = writable<number>(-1);
 export const projectOwner = writable<string>('');
 export const projectOwnerId = writable<string>(-1);
 export const readOnlyMode = writable<boolean>(false);
+export const readOnlyMode = writable<boolean>(false);
 
 export const seqPatternIdStore = writable<number>(-1)
 export const seqPatternNameStore = writable<string>('')
