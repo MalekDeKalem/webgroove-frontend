@@ -72,7 +72,7 @@
                 // Prüfen, ob der Benutzer das Projekt geliked hat
                 let likedByCurrentUser = false;
                 try {
-                    const likedByResponse = await fetch(`http://localhost:3999/api/projects/${project.id}/likedby`);
+                    const likedByResponse = await fetch(`https://webgroove-82906d5c43b2.herokuapp.com/api/projects/${project.id}/likedby`);
                     const likedByData = await likedByResponse.json();
                     likedByCurrentUser = likedByData.users.find(user => user.id === parseInt(localStorage.getItem("userId")));
                     if (currentUser) {
@@ -102,7 +102,7 @@
 }
 
     async function loadPatterns(projectId) {
-        const url = `http://localhost:3999/api/projects/${projectId}/patterns`;
+        const url = `https://webgroove-82906d5c43b2.herokuapp.com/api/projects/${projectId}/patterns`;
 
         try {
             errorMessage = "";
