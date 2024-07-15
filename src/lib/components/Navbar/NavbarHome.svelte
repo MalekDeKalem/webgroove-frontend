@@ -3,11 +3,12 @@
     import { goto } from "$app/navigation";
 
     import BpmAnzeiger from "$lib/components/BpmAnzeiger.svelte";
-    import { bpmStore, rows, projectNameStore, projectIsPublic, loggedIn, formatBase64Image } from "$lib/stores";
+    import { bpmStore, rows, projectNameStore, projectIsPublic, loggedIn, formatBase64Image, readOnlyMode, showNewProjectDialog } from "$lib/stores";
     import { onMount } from "svelte";
     import LogoutDialog from "./Modals/LogoutDialog.svelte";
     import NewProjectDialog from "./Modals/newProjectDialog.svelte";
     import OpenProjectDialog from "./Modals/openProjectDialog.svelte";
+    import { resetProjectData } from "./NavbarLogic";
 
     let hamburgerWrapper;
     let navMenu;
@@ -68,6 +69,13 @@
         if ($loggedIn) {
             // Ihre Speicherlogik hier
         }
+    }
+
+    export function newProject() {
+        resetProjectData();
+        readOnlyMode.set(false);
+        goto("./synthesizer");
+        showNewProjectDialog.set(true);
     }
 
     function openProject() {
@@ -138,13 +146,10 @@
                 <img class="pfp" src={pictureUrl} alt="Pictures" />
             </li>
             <li class="nav-item">
-                <a href="#" class="nav-link" class:disabled={!$loggedIn}>View Community Presets</a>
+                <a href="javascript:void(0);" on:click={newProject} class="nav-link" class:disabled={!$loggedIn}>New</a>
             </li>
             <li class="nav-item">
                 <a href="#" on:click={openProject} class="nav-link" class:disabled={!$loggedIn}>Open</a>
-            </li>
-            <li class="nav-item">
-                <a href="#" class="nav-link" class:disabled={!$loggedIn}>Settings</a>
             </li>
             <li class="nav-item">
                 <a href="#" on:click={initiateLogout} class="nav-link" class:disabled={!$loggedIn}>Logout</a>

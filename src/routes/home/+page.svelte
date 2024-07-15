@@ -4,19 +4,32 @@
     import Bottomtext from "$lib/components/Footer/Bottomtext.svelte";
     import Navbar2 from "$lib/components/Navbar/NavbarHome.svelte";
     import { onMount } from "svelte";
-    import { checkForLoginContext } from "$lib/components/Navbar/NavbarLogic";
+    import { checkForLoginContext, resetProjectData } from "$lib/components/Navbar/NavbarLogic";
     import VeriyEmail from "$lib/components/veriyEmail.svelte";
-    import { bpmStore, loggedIn, showOpenProjectDialog } from "$lib/stores";
+    import { bpmStore, loggedIn, resetProject, showOpenProjectDialog, fetchUrl } from "$lib/stores";
     import PublicProjects from "$lib/components/publicProjects.svelte";
     import OpenProjectDialog from "$lib/components/Navbar/Modals/openProjectDialog.svelte";
     import Synthesizer from "$lib/components/Synthesizer.svelte";
     import Drummachine from "$lib/components/Drummachine.svelte";
     import Debuginfo from "$lib/components/Debuginfo.svelte";
+    import { goto } from "$app/navigation";
     
     onMount(() => {
         checkForLoginContext();
     });
+
+    function navigateToApp() {
+        resetProjectData()
+        goto("/synthesizer")
+    }
     
+    function openProject() {
+        showOpenProjectDialog.set(true)
+    }
+
+    export function cancelSave() {
+        showOpenProjectDialog.set(false);
+    }
 
 </script>
 
@@ -31,12 +44,17 @@
                 <li>Breite Auswahl an Drumkits</li>
                 <li>Teile deine Musik und erlebe die Meisterwerke anderer User</li>
             </ul>
+<!-- svelte-ignore a11y-no-static-element-interactions -->
+<!-- svelte-ignore a11y-click-events-have-key-events -->
+<!-- svelte-ignore a11y-missing-attribute -->
+<!-- svelte-ignore a11y-no-static-element-interactions -->
             <div class="links">
                 {#if !$loggedIn}
                 <a class="cta-button" href="./synthesizer">ohne Login loslegen</a>
                 <a class="register-link" href="./registration">registriere dich hier</a>
                 {:else}
-                <a class="cta-button" href="./synthesizer">weiter zur App</a>
+                <a class="cta-button" on:click={navigateToApp}>neues Projekt erstellen</a>
+                <a class="cta-button" on:click={openProject}>Projekt öffnen</a>
                 {/if} 
                 
             </div>
@@ -57,13 +75,16 @@
         </div>
     </div>
 </div>
-
 <div class="container public">
-    <div class="public-projects">
+    <div id= "publicProjects" class="public-projects">
         <PublicProjects/>
     </div>
 </div>
-
+{#if $showOpenProjectDialog}
+    <OpenProjectDialog
+        cancelSave={cancelSave}
+    />
+{/if}
 <!-- <Debuginfo></Debuginfo> -->
 <div class="hidden">
     <Synthesizer />
@@ -232,6 +253,7 @@
     }
 
     .cta-button, .register-link {
+        cursor: pointer;
         padding: 0.75rem 1.5rem;
         font-size: 1rem;
         border-radius: 5px;

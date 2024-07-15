@@ -4,38 +4,45 @@
   import * as Tone from "tone";
   import Drummixer from "$lib/components/Drummixer.svelte";
   import EffectList from "$lib/components/EffectList.svelte";
-  import { bpmStore, effectDrumStore, beatStore, playStore, moveDrumEffectUp, moveDrumEffectDown, removeDrumEffect, addDrumEffect, activeDrumStore, soloDrumStore, muteDrumStore, updateDrumState, panDrumStore, gainDrumStore, delayParams, distortionParams, reverbParams, chorusParams } from '$lib/stores';
+  import { bpmStore, effectDrumStore, beatStore, playStore, moveDrumEffectUp, moveDrumEffectDown, removeDrumEffect, addDrumEffect, activeDrumStore, soloDrumStore, muteDrumStore, updateDrumState, panDrumStore, gainDrumStore, delayParams, distortionParams, reverbParams, chorusParams, samplekitIndexStore  } from '$lib/stores';
   import { createReverb } from '$lib/effects';
   import { get } from 'svelte/store';
   import { onDestroy } from 'svelte';
- 
 
-  const samples = [
-    new Tone.Sampler({urls: {
-        C3: "/samples/blackpearl/perc_2.wav"
-      },
-    }),
-    new Tone.Sampler({urls: {
-        C3: "/samples/blackpearl/perc_1.wav"
-      },
-    }),
-    new Tone.Sampler({urls: {
-        C3: "/samples/blackpearl/hat.wav"
-      },
-    }),
-    new Tone.Sampler({urls: {
-        C3: "/samples/blackpearl/clap.wav"
-      },
-    }),
-    new Tone.Sampler({urls: {
-        C3: "/samples/blackpearl/snare.wav"
-      },
-    }),
-    new Tone.Sampler({urls: {
-        C3: "/samples/blackpearl/kick.wav"
-      },
-    }),
-  ];
+  const samplekits = ["init", "blackpearl", "zeppelin"];
+
+
+  let samples = [];
+
+  // Step 4: Create a reactive statement to update samples when samplekitIndexStore changes
+  $: {
+    samplekitIndexStore.subscribe(index => {
+      samples = [
+        new Tone.Sampler({ urls: { C3: `/samples/${samplekits[index]}/perc_2.wav` } }).toDestination(),
+        new Tone.Sampler({ urls: { C3: `/samples/${samplekits[index]}/perc_1.wav` } }).toDestination(),
+        new Tone.Sampler({ urls: { C3: `/samples/${samplekits[index]}/hat.wav` } }).toDestination(),
+        new Tone.Sampler({ urls: { C3: `/samples/${samplekits[index]}/clap.wav` } }).toDestination(),
+        new Tone.Sampler({ urls: { C3: `/samples/${samplekits[index]}/snare.wav` } }).toDestination(),
+        new Tone.Sampler({ urls: { C3: `/samples/${samplekits[index]}/kick.wav` } }).toDestination(),
+      ];
+    });
+    effectDrumStore.subscribe(effectList => {
+    samples.forEach((sample, index) => {
+      sample.disconnect();
+      const pan = get(panDrumStore)[index];
+      const gain = get(gainDrumStore)[index];
+
+      sample.chain(
+        gain,
+        pan,
+        ...effectList,
+        Tone.Destination
+      );
+    });
+  });
+
+
+  }
 
   let beatIndicators = Array.from({ length: 16}, (_, i) => i);
 /*
@@ -58,22 +65,7 @@
   });
 
 */
-  effectDrumStore.subscribe(effectList => {
-    samples.forEach((sample, index) => {
-      sample.disconnect();
-      const pan = get(panDrumStore)[index];
-      const gain = get(gainDrumStore)[index];
-
-      sample.chain(
-        gain,
-        pan,
-        ...effectList,
-        Tone.Destination
-      );
-    });
-  });
-
-  Tone.Transport.scheduleRepeat(time => {
+   Tone.Transport.scheduleRepeat(time => {
    $activeDrumStore.map((row, index) => {
   let sample = samples[index];
     let currentBeat = row[$beatStore];
@@ -106,6 +98,14 @@
         updateDrumState(i, j , false);
       }
     }
+  }
+
+  const handleNextKit = () => {
+    samplekitIndexStore.update(() => {return $samplekitIndexStore === samplekits.length - 1 ? 0 : $samplekitIndexStore + 1});
+  }
+
+  const handlePrevKit = () => {
+    samplekitIndexStore.update(() => {return $samplekitIndexStore === 0 ? samplekits.length - 1 : $samplekitIndexStore - 1});
   }
 
     // Mouse click und drag events
@@ -163,6 +163,13 @@
 
 <div class="container">
 
+  <div class="samplekit-chooser">
+  <button on:click={handlePrevKit} class="arrow-button"> <i class="fa fa-angle-left"> </i></button>
+  <h2 class="samplekit-name"> {samplekits[$samplekitIndexStore]} </h2>
+  <button on:click={handleNextKit} class="arrow-button"> <i class="fa fa-angle-right"> </i> </button>
+  </div>
+
+
   <div class="beat-indicators">
     {#each beatIndicators as beatIndicator, bi}
       <div class="beat-indicator {bi === $beatStore -1 ? 'live' : ''}"></div>
@@ -218,6 +225,12 @@
     justify-content: center;
     margin-bottom: 20px;
     margin-top: 20px;
+  }
+
+  .samplekit-name {
+    display: flex;
+    justify-content: center;
+    width: 87%;
   }
 
   .controls button {
@@ -287,6 +300,35 @@
     align-items: center;
     padding: 0;
     box-sizing: border-box;
+  }
+
+
+  .arrow-button {
+    display: flex;
+    align-items: center;
+    margin: 0em .8em;
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    outline: none;
+  }
+
+  .fa{
+    font-size: 3em;
+    color: rgb(255, 255, 255);
+  }
+
+  .fa:hover {
+    color: #bdbdbd;
+  }
+
+
+
+  .samplekit-chooser {
+    display: flex;
+    border-radius: 10px;
+    background-color: #272727;
+    border: 2px solid #6d6d6d;
   }
 
   .beat.active {

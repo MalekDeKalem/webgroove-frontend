@@ -1,6 +1,6 @@
 <script>
     // @ts-nocheck
-    import {bpmStore,projectNameStore,projectIsPublic,activeDrumStore,rows, projectId, description, gainDrumStore, panDrumStore, soloDrumStore, effectDrumStore, serializeGains, serializePans, serializeEffects, muteDrumStore, synthVolumeStore, synthPitchStore, synthPanStore, synthAttack, synthDecay, synthSustain, synthRelease, effectSynthStore, wavetableIndexStore, selectedNote, selectedScale, selectedOctave } from "$lib/stores";
+    import {bpmStore,projectNameStore,projectIsPublic,activeDrumStore,rows, projectId, description, gainDrumStore, panDrumStore, soloDrumStore, effectDrumStore, serializeGains, serializePans, serializeEffects, muteDrumStore, synthVolumeStore, synthPitchStore, synthPanStore, synthAttack, synthDecay, synthSustain, synthRelease, effectSynthStore, wavetableIndexStore, selectedNote, selectedScale, selectedOctave, projectIsImportable } from "$lib/stores";
     import { onMount } from "svelte";
     import { effect } from "zod";
     export let isPublic = false;
@@ -19,6 +19,7 @@
             projectId: $projectId,
             projectName: $projectNameStore,
             isPublic: $projectIsPublic,
+            isImportable: $projectIsImportable,
             bpm: $bpmStore,
             description: $description,
 
@@ -68,7 +69,7 @@
                 saveSuccess = true;
                 setTimeout(() => {
                     cancelSave();
-                }, 1200); // Schließe das Dialogfeld nach 2 Sekunden
+                }, 800); // Schließe das Dialogfeld nach 2 Sekunden
             } else {
                 console.error(
                     "Fehler beim Speichern des Projekts:",
@@ -156,7 +157,7 @@
         padding: 2em;
         border-radius: 15px;
         text-align: center;
-        padding-bottom: 1em;
+        padding: 1em;
     }
 
     .dialog div {

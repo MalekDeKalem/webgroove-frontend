@@ -2,7 +2,7 @@
     // @ts-nocheck
     import { goto } from "$app/navigation";
     import BpmAnzeiger from "$lib/components/BpmAnzeiger.svelte";
-    import { bpmStore, rows, projectNameStore, projectIsPublic, loggedIn, showNewProjectDialog, formatBase64Image } from "$lib/stores";
+    import { bpmStore, rows, projectNameStore, projectIsPublic, loggedIn, showNewProjectDialog, formatBase64Image, readOnlyMode } from "$lib/stores";
     import { onMount } from "svelte";
     import LogoutDialog from "./Modals/LogoutDialog.svelte";
     import NewProjectDialog from "./Modals/newProjectDialog.svelte";
@@ -18,6 +18,7 @@
     let showLogoutDialog = false;
     let projectName;
     let isPublic;
+    let isImportable;
     let pictureUrl;
 
     async function getProfilePicture() {
@@ -74,11 +75,13 @@
 
     export function newProject() {
         resetProjectData();
+        readOnlyMode.set(false);
         showNewProjectDialog.set(true);
     }
 
     export function openProject() {
         if ($loggedIn) {
+            readOnlyMode.set(false);
             showOpenProjectDialog = true;
         }
     }
@@ -114,6 +117,25 @@
     function navigateToProfile() {
         goto('/profil'); // Hier die URL deiner Profilseite angeben
     }
+
+    let tooltipVisible = false;
+
+    function getTooltip() {
+        tooltipVisible = true; // Standardmäßig sichtbar, falls eine Bedingung zutrifft
+
+        if (!$loggedIn) {
+            return 'Bitte logge dich ein, um das Projekt zu speichern.';
+        } else if (!$projectNameStore) {
+            return 'Keine Projektdaten vorhanden, bitte erstelle ein neues Projekt oder öffne ein vorhandenes.';
+        } else if ($readOnlyMode) {
+            return 'Das Projekt ist im Nur-Lesen-Modus, Änderungen sind nicht möglich.';
+        }
+
+        tooltipVisible = false; // Keine Bedingung zutrifft
+        return ''; // Leerer Tooltip
+    }
+
+
 </script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
@@ -141,12 +163,9 @@
                 {/if}
                 <img class="pfp" src={pictureUrl} alt="Picture" />
             </li>
-            <li class="nav-item">
+            <!-- <li class="nav-item">
                 <a href="javascript:void(0);" class="nav-link" class:disabled={!$loggedIn}>Share</a>
-            </li>
-            <li class="nav-item">
-                <a href="javascript:void(0);" class="nav-link" class:disabled={!$loggedIn}>View Community Presets</a>
-            </li>
+            </li> -->
             <li class="nav-item">
                 <a href="javascript:void(0);" on:click={newProject} class="nav-link" class:disabled={!$loggedIn}>New</a>
             </li>
@@ -154,12 +173,19 @@
                 <a href="javascript:void(0);" on:click={openProject} class="nav-link" class:disabled={!$loggedIn}>Open</a>
             </li>
             <li class="nav-item">
-                <a href="javascript:void(0);" on:click={saveProject} class="nav-link {(!$projectNameStore) ? 'error' : ''}" class:disabled={!$loggedIn || !$projectNameStore} title={!$projectNameStore ? 'keine Projektdaten vorhanden bitte erstelle ein neues projekt oder öffne ein vorhandenes' : ''}>
-                    Save Project                 {#if !$projectNameStore}<i class="fa fa-exclamation"></i> {/if}
-
+                <a href="javascript:void(0);" 
+                   on:click={saveProject} 
+                   class="nav-link {(!$projectNameStore) ? 'error' : ''}" 
+                   class:disabled={!$loggedIn || !$projectNameStore || $readOnlyMode} 
+                   title={getTooltip()}>
+                    Save Project
+                    {#if !$projectNameStore}
+                        <i class="fa fa-exclamation"></i>
+                    {/if}
                 </a>
-                {#if !$projectNameStore}<span class="tooltiptext">keine Projektdaten vorhanden. Bitte erstelle ein neues Projekt oder öffne ein vorhandenes.</span> {/if}
-
+                <span class="tooltiptext" style:visibility={tooltipVisible ? 'visible' : 'hidden'}>
+                    {getTooltip()}
+                </span>
             </li>
             <li class="nav-item">
                 <a href="./home" class="nav-link">Home</a>
@@ -215,6 +241,13 @@
 {/if}
 
 <style>
+    .bpm {
+        position: relative;
+        left: 5em;
+    }
+    .preset {
+        visibility: hidden;
+    }
     .nav-elements {
         font-size: 18pt;
     }

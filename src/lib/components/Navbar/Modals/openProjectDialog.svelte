@@ -32,6 +32,9 @@
         updateSynthVolumeStore,
         wavetableIndexStore,
         updateSynthScale,
+        projectIsPublic,
+        projectIsImportable,
+        showNewProjectDialog,
     } from "$lib/stores";
     export let cancelSave;
     import { onMount } from "svelte";
@@ -132,21 +135,27 @@
         const date = new Date(dateString);
         return date.toLocaleDateString("de-DE", {
             day: "2-digit",
-            month: "short",
+            month: "2-digit",
             year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit"
         });
     }
 
     // aktualisiert das im Store gespeicherte Projekt auf das Projekt was der User anklickt in der Liste
     function handleProjectClick(project) {
+        isLoading = true;
         projectNameStore.set(project.projectName)
         projectId.set(project.id)
         bpmStore.set(project.bpm)
+        projectIsPublic.set(project.visibility)
+        projectIsImportable.set(project.isImportable)
         description.set(project.description)
         projectLikes.set(project.likes)
         loadPatterns();
         goto("./synthesizer")
     }
+
 </script>
 
 <div class="dialog-overlay">
@@ -156,7 +165,8 @@
         >
         <h3>Projekt öffnen ({count})</h3>
         {#if isLoading}
-            <LoadingIndicator />
+        <div><LoadingIndicator /></div>
+            
         {:else if projects.length === 0}
             <p>Du hast noch keine Projekte...</p>
         {:else if errorMessage}
@@ -172,9 +182,9 @@
                         <th>Projekt Name</th>
                         <th>BPM</th>
                         <th>Beschreibung</th>
+                        <th>Öffentlich</th>
                         <th>Erstellt</th>
                         <th>Zuletzt bearbeitet</th>
-                        <th>Likes</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -198,9 +208,9 @@
                             <td>{project.projectName}</td>
                             <td>{project.bpm}</td>
                             <td>{project.description}</td>
+                            <td>{project.visibility ? 'ja' : 'nein' }</td>
                             <td>{formatDate(project.createdAt)}</td>
                             <td>{formatDate(project.updatedAt)}</td>
-                            <td>{project.likes}</td>
                         </tr>
                     {/each}
                 </tbody>

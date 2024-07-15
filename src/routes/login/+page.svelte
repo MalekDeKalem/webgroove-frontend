@@ -90,7 +90,7 @@
 <Bottomtext />
 
 <div class="continue">
-  <a href="/synthesizer"> <button>ohne Login weiter</button></a>
+  <a href="/home"> <button>ohne Login weiter</button></a>
 </div>
 
 <style>

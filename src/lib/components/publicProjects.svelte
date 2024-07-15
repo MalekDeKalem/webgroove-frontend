@@ -13,6 +13,7 @@
         effectDrumStore,
         effectSynthStore,
         formatBase64Image,
+        isPreviewing,
         muteDrumStore,
         projectId,
         projectIsPublic,
@@ -20,8 +21,10 @@
         projectNameStore,
         projectOwner,
         projectOwnerId,
+        readOnlyMode,
         rows,
         seqPatternIdStore,
+        showNewProjectDialog,
         soloDrumStore,
         updateSynthAdsr,
         updateSynthPanStore,
@@ -42,40 +45,61 @@
     let previewIsPlaying = {}; // Objekt für den Spielstatus jedes Projekts
     let searchQuery = ""; // Suchanfrage des Benutzers
     let filteredProjects = [];
-
-    onMount(() => {
-        getPublicProjects();
+    let isLoading = false;
+    let userId = localStorage.getItem("userId");
+    
+    onMount(async () => {
+        isLoading = true
+        await getPublicProjects();
+        isLoading = false
     });
 
-    async function getPublicProjects() {
-        const url = `https://webgroove-82906d5c43b2.herokuapp.com/api/projects/public`;
+   async function getPublicProjects() {
+    const url = `https://webgroove-82906d5c43b2.herokuapp.com/api/projects/public`;
 
-        try {
-            const response = await fetch(url, { method: "GET" });
+    try {
+        const response = await fetch(url, { method: "GET" });
 
-            if (!response.ok) {
-                throw new Error(`HTTP-Fehler! Statuscode: ${response.status}`);
-            }
-            const { publicProjects } = await response.json();
-
-            projects = await Promise.all(
-                publicProjects.map(async (project) => {
-                    const profilePictureUrl = await loadProfilePicture(project);
-                    return {
-                        ...project,
-                        User: {
-                            ...project.User,
-                            country: getFlagEmoji(project.User.country),
-                        },
-                        profilePictureUrl,
-                    };
-                }),
-            );
-            filteredProjects = projects;
-        } catch (error) {
-            console.error("Fehler beim Laden der Projekte:", error);
+        if (!response.ok) {
+            throw new Error(`HTTP-Fehler! Statuscode: ${response.status}`);
         }
+        const { publicProjects } = await response.json();
+
+        projects = await Promise.all(
+            publicProjects.map(async (project) => {
+                const profilePictureUrl = await loadProfilePicture(project);
+
+                // Prüfen, ob der Benutzer das Projekt geliked hat
+                let likedByCurrentUser = false;
+                try {
+                    const likedByResponse = await fetch(`https://webgroove-82906d5c43b2.herokuapp.com/api/projects/${project.id}/likedby`);
+                    const likedByData = await likedByResponse.json();
+                    likedByCurrentUser = likedByData.users.find(user => user.id === parseInt(localStorage.getItem("userId")));
+                    if (currentUser) {
+                        likedByCurrentUser = true;
+                    } else {
+                        likedByCurrentUser = false;
+                    }
+                } catch (error) {
+                    // console.log("Fehler beim Abrufen der Likes:", error);
+                }
+
+                return {
+                    ...project,
+                    User: {
+                        ...project.User,
+                        country: getFlagEmoji(project.User.country),
+                    },
+                    profilePictureUrl,
+                    likedByCurrentUser,
+                };
+            })
+        );
+        filteredProjects = projects;
+    } catch (error) {
+        console.error("Fehler beim Laden der Projekte:", error);
     }
+}
 
     async function loadPatterns(projectId) {
         const url = `https://webgroove-82906d5c43b2.herokuapp.com/api/projects/${projectId}/patterns`;
@@ -165,8 +189,20 @@
         description.set(project.description);
         projectIsPublic.set(project.visibility);
         loadPatterns(project.id);
+        readOnlyMode.set(true);
+        // isPreviewing.set(true);
         goto("./synthesizer");
     }
+
+    function handleImportProjectClick(project) {
+        loadingProjectId = project.id;
+        bpmStore.set(project.bpm);
+        loadPatterns(project.id);
+        readOnlyMode.set(false);
+        goto("./synthesizer");
+        showNewProjectDialog.set(true);
+    }
+
 
     function formatDate(dateString) {
         const date = new Date(dateString);
@@ -233,6 +269,39 @@
             return text.substr(0, maxLength - 3) + "..."; // Truncate and add ellipsis
         }
     }
+
+    // Likes Logik
+    async function likeProject(projectId) {
+    const url = `https://webgroove-82906d5c43b2.herokuapp.com/api/projects/${projectId}/like`;
+
+    try {
+        let project = projects.find(p => p.id === projectId);
+        let isLiked = project.likedByCurrentUser;
+
+        const response = await fetch(url, {
+            method: isLiked ? "DELETE" : "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                userId: localStorage.getItem("userId"),
+            }),
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP-Fehler! Statuscode: ${response.status}`);
+        }
+
+        project.likeCount = isLiked ? project.likeCount - 1 : project.likeCount + 1;
+        project.likedByCurrentUser = !isLiked;
+
+        projects = projects.map(p => (p.id === projectId ? project : p));
+        filteredProjects = projects;
+    } catch (error) {
+        console.error("Fehler beim Liken des Projekts:", error);
+    }
+}
+
 </script>
 
 <link
@@ -262,17 +331,26 @@
             </div>
         </div>
     </div>
-
+    <div class ="legend">
+        <i class="fa fa-clone"></i>
+        <span class="tooltip">Creator erlaubt das Importieren des Projekts</span>
+    </div>
+    <!-- svelte-ignore a11y-click-events-have-key-events -->
+    <!-- svelte-ignore a11y-no-static-element-interactions -->
+    <!-- svelte-ignore a11y-missing-attribute -->
     <div class="project-cards">
+        {#if isLoading}
+        <div class="initial-loading-container">
+            <LoadingIndicator />
+        </div>
+        {:else}
         {#if projects.length === 0}
             <div class="project-card">Noch keine Projekte vorhanden...</div>
             {:else if filteredProjects.length === 0}
             <div class="project-card">Keine Projekte gefunden...</div>
         {:else}
             {#each filteredProjects as project}
-                <!-- svelte-ignore a11y-click-events-have-key-events -->
-                <!-- svelte-ignore a11y-no-static-element-interactions -->
-                <!-- svelte-ignore a11y-missing-attribute -->
+
 
                 <div class="project-card">
                     {#if loadingProjectId === project.id}
@@ -281,6 +359,9 @@
                         </div>
                     {:else}
                         <div class="card-header">
+                            {#if project.isImportable}
+                            <i on:click={() => handleImportProjectClick(project)} class="fa fa-clone import-button"></i>
+                            {/if}
                             <i
                                 class={previewIsPlaying[project.id]
                                     ? "fa fa-stop-circle"
@@ -291,9 +372,13 @@
                                     : () => handlePlayClick(project)}
                             ></i>
                             <h2>
+                                {#if !project.isImportable}
+                                <a class="disabled">{truncateText(project.projectName)}</a>
+                                {:else}
                                 <a on:click={() => handleProjectClick(project)}
                                     >{truncateText(project.projectName)}</a
                                 >
+                                {/if}
                             </h2>
                         </div>
                         <div class="userinfo">
@@ -311,25 +396,53 @@
 
                         <div class="likes">
                             <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                viewBox="0 0 24 24"
-                                width="24px"
-                                height="24px"
-                            >
-                                <path
-                                    d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-                                />
-                            </svg>
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            width="24px"
+                            height="24px"
+                            on:click={() => likeProject(project.id)}
+                        >
+                            <path
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                                fill={project.likedByCurrentUser ? '#ff0000' : 'rgb(161, 161, 161)'}
+                            />
+                        </svg>
                             <span>{parseInt(project.likeCount)}</span>
+                            
                         </div>
                     {/if}
                 </div>
             {/each}
         {/if}
+    {/if}
     </div>
 </div>
-
 <style>
+    .legend {
+        font-size: medium;
+        position: relative;
+        left: 5em;
+    }
+    .disabled {
+        pointer-events: none;
+    }
+    .initial-loading-container{
+        display: flex;
+        justify-content: center;
+        width: 100%;
+        position: relative;
+        top: 8em
+    }
+    .import-button {
+        font-size: 1.5em;
+        position: absolute;
+        right: 1.2em;
+        /* top: 1.5em; */
+        transition: .5s cubic-bezier(0.19, 1, 0.22, 1)
+    }
+    .import-button:hover {
+        transform: scale(1.3);
+    }
     .search-bar {
         position: relative;
         display: flex;
@@ -351,14 +464,14 @@
 
     .filter-container {
         position: relative;
-        background: #b9b9b9;
+        background: rgb(146, 146, 146);
         border-radius: 8px;
         margin: 1em;
         padding: .5em 1em;
         display: flex;
         align-items: center;
         gap: 1em;
-
+        font-family: "Inter", sans-serif!important;
     }
     .card-header a:hover {
         text-decoration: underline;
@@ -391,7 +504,9 @@
     .project-card h2 {
         margin: 0 0;
     }
-    
+    /* .load-button {
+        margin: 5px; */
+    /* } */
     .userinfo {
         display: flex;
         align-items: center;
@@ -404,6 +519,7 @@
         border-radius: 50%; /* Runde Ecken für das Profilbild */
         margin-right: 10px; /* Optional: Abstand zwischen Profilbild und Benutzernamen */
     }
+
 
     label {
         margin: 0; /* Zur Sicherheit alle Ränder aufheben */
@@ -441,9 +557,9 @@
         background-color: #e0f7fa;
     }
 
-    .project-card p {
+    /* .project-card p {
         margin-top: 0;
-    }
+    } */
 
     .likes {
         display: flex;
@@ -469,12 +585,11 @@
         position: relative;
         display: inline-block;
         cursor: pointer;
-        color: rgb(0, 0, 0);
+        color: rgb(255,255,255);
     }
 
     .sort-menu-container:hover {
         color: rgb(214, 214, 214);
-        font-weight: bold;
     }
 
     .sort-menu {

@@ -1,7 +1,8 @@
 import {
   bpmStore, playStore, beatStore, gainDrumStore, panDrumStore,
   activeDrumStore, soloDrumStore, muteDrumStore, effectDrumStore,
-  projectId, projectNameStore, projectIsPublic, rows, updateDrumState, loggedIn
+  projectId, projectNameStore, projectIsPublic, rows, updateDrumState, loggedIn,
+  description
 } from "../../stores";
 import * as Tone from "tone";
 
@@ -30,6 +31,8 @@ export async function resetProjectData() {
   projectId.set(-1)
   projectNameStore.set('');
   projectIsPublic.set(false);
+  description.set('')
+  
 
 }
 

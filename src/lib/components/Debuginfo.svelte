@@ -8,7 +8,10 @@
       projectNameStore, projectIsPublic, description, projectLikes, 
       projectOwner, projectOwnerId, seqPatternIdStore, seqPatternNameStore, 
       drumPatternIdStore, drumPatternNameStore, wavetableIndexStore, 
-      samplekitIndexStore
+      samplekitIndexStore,
+
+      readOnlyMode
+
     } from '../stores';
 
   </script>
@@ -41,6 +44,8 @@
     <p><strong>seqPatternIdStore</strong>: {$seqPatternIdStore}</p>
     <p><strong>seqPatternNameStore</strong>: {$seqPatternNameStore}</p>
     <p><strong>drumPatternIdStore</strong>: {$drumPatternIdStore}</p>
+    <p><strong>readOnlyMode</strong>: {$readOnlyMode}</p>
+
     <!-- <p><strong>drumPatternNameStore</strong>: {$drumPatternNameStore}</p>
     <p><strong>wavetableIndexStore</strong>: {$wavetableIndexStore}</p>
     <p><strong>samplekitIndexStore</strong>: {$samplekitIndexStore}</p> -->

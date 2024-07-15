@@ -17,7 +17,16 @@
 
         formatBase64Image,
 
-        projectOwnerId
+        projectOwnerId,
+
+        projectIsImportable,
+
+        readOnlyMode,
+
+        loggedIn
+
+
+
 
 
     } from "$lib/stores";
@@ -49,6 +58,7 @@
             description: $description,
             bpm: $bpmStore,
             visibility: $projectIsPublic,
+            isImportable: $projectIsImportable
         };
 
         try {
@@ -110,7 +120,7 @@
                 likedByCurrentUser = false;
             }
         } catch (error) {
-            console.error("Fehler beim Abrufen der Likes:", error);
+            console.log("Fehler beim Abrufen der Likes:", error);
         } 
 
         // herz wird rot auf der seite
@@ -228,6 +238,14 @@
                     bind:checked={$projectIsPublic}
                 />
             </div>
+            <div class="input-checkbox body">
+                <label for="isPublic">importierbar:</label>
+                <input
+                    type="checkbox"
+                    id="isImportable"
+                    bind:checked={$projectIsImportable}
+                />
+            </div>
             {#if msg.show}
             <small class="msg">{msg.msg}</small>
             {/if}
@@ -295,8 +313,12 @@
                 </div>
             </div>
             <div class="ids">
-                {#if $projectId === -1}
-                <small class="warning">bitte öffne oder erstelle ein neues Projekt</small>
+                {#if $loggedIn && $projectId === -1}
+                <small class="info-box warning">bitte öffne oder erstelle ein neues Projekt</small>
+                {:else if $readOnlyMode}
+                <small class="info-box info">read only Modus: Änderung werden nicht gepeichert</small>
+                {:else if !$loggedIn}
+                <small class="info-box info">bitte melde dich an um Projekte zu speichern</small>
                 {:else}
                 <small>Projekt ownerId: {$projectOwnerId}</small>
                 <small>Projekt ID: {$projectId}</small>
@@ -313,11 +335,20 @@
     .msg {
         text-align: center;
     }
+
+    .info-box {
+        padding: 1%;
+        margin-bottom: 1%;
+        border-radius: 8px;
+    }
     .warning {
         background: #ff0000;
         color: rgb(255, 255, 255);
-        padding: 1%;
-        border-radius: 8px;
+    }
+
+    .info {
+        background: #a5a5a5;
+        color: rgb(3, 3, 3);
     }
     .loading {
         position: relative;
