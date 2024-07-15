@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
     // @ts-nocheck
     import { goto } from "$app/navigation";
 
